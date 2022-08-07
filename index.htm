@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html oncontextmenu='return false;'>
+<head>
+<title>Office Kiosk</title>
+<meta name='viewport' content='width=device-width, initial-scale=1.0'>
+<style>
+	html
+	{
+		width: 100%;
+		height: 100%;
+		/*cursor: none;*/
+	}
+	body
+	{
+		color: white;
+		font-size: 3.7vh;
+		/*cursor: none;*/
+		background: #202020;
+		background: linear-gradient(-225deg, #666666 0%, #202020 100%);
+		background-repeat: no-repeat;
+		background-position: center;
+		background-size: contain;
+		width: 100%;
+		height: 100%;
+		font-family: Trebuchet MS, Comfortaa, Arial, sans-serif;
+		margin: 0;
+		padding: 0;
+	}
+	#foreground, #background, .bottom
+	{
+		display: block;
+		position: absolute;
+		background-repeat: no-repeat;
+		background-position: center;
+		width:100%;
+		height:100%;
+	}
+	#foreground
+	{
+		background-size: contain;
+	}
+	#background
+	{
+		z-index: -10;
+		filter: blur(15px);
+		opacity: 0.8;
+		-webkit-filter: blur(15px);
+		background-size: cover;
+	}
+	.bottom
+	{
+		background: linear-gradient(180deg, rgba(0,0,0,0) 75%, rgba(0,0,0,0.6) 100%);
+	}
+	#widget
+	{
+		position: absolute;
+		bottom: 5vh;
+		right: 6vw;
+		width: 70%;
+		text-align: right;
+		overflow: hidden;
+	}
+	#widget img
+	{
+		width: 6.5vh;
+		margin: -1.9vh -1vh;
+	}
+	#clock
+	{
+		font-size: 8vh;
+		padding-left: 4.6vh;
+	}
+	#title
+	{
+		opacity: 0.5;
+		font-size: 2vh;
+		text-transform: capitalize;
+		white-space: nowrap;
+	}
+	#jsonOut
+	{
+		display: none;
+	}
+</style>
+<script src="list.js"></script>
+</head>
+<body>
+	<div id="foreground">
+		<div class="bottom">
+			<div id="widget">
+				<span>72&deg;</span><img src="weather/01d.png"/><span id="clock">0:00</span><br>
+				<span id="title">This is the title text that goes here</span>
+			</div>
+		</div>
+	</div>
+	<div id="background"></div>
+	<div id="jsonOut"></div>
+</body>
+<script>
+var imgNum = -1;
+var img = imgList[0];
+var imgTimer;
+
+function changeImg()
+{
+	if (++imgNum === imgList.length) //If it's equal to the length, then that's too much. Let's stick with the first one again.
+		imgNum = 0;
+	img = imgList[imgNum];
+
+	document.getElementById('foreground').style.backgroundImage = 'url("i/'+img+'")';
+	document.getElementById('background').style.backgroundImage = 'url("i/'+img+'")';
+	document.getElementById('title').innerHTML = img.replace(/\.[\w]{3,4}$/, '').replace(/_/g, ' ').replace(/\[[^\]]+]/, '');
+}
+
+function changeImgTimeout()
+{
+	clearInterval(imgTimer);
+	imgTimer = setInterval(changeImg, 180000); // 1000 milisec = 1 sec
+}
+
+window.addEventListener("click", function(event)
+{
+	changeImg();
+	changeImgTimeout();
+});
+
+async function getWeather()
+{
+	let res = await fetch('http://api.openweathermap.org/data/2.5/weather?lat=[LATITUDE GOES HERE]&lon=[LONGITUDE GOES HERE]&units=imperial&appid=[YOUR APP ID HERE]'/*, {mode: 'cors'}*/);
+	res = await res.json();
+
+	let widget = document.getElementById('widget');
+	// widget.getElementsByTagName('span')[0].innerHTML = Math.round(res.main.temp)+'&deg;';
+	// widget.getElementsByTagName('img')[0].src = 'weather/'+res.weather[0].icon+'.png';
+	widget.children[0].innerHTML = Math.round(res.main.temp)+'&deg;';
+	widget.children[1].src = 'weather/'+res.weather[0].icon+'.png';
+
+	return res;
+}
+
+function getTime()
+{
+	let now = new Date();
+	let hr = (now.getHours()+'').replace(/0*(\d{1,2})/, '$1');
+	if (hr > 12)
+		hr = hr - 12;
+	let min = now.getMinutes();
+	if (min < 10)
+		min = '0'+min;
+	document.getElementById('clock').innerHTML = hr+':'+min;
+}
+
+document.addEventListener('DOMContentLoaded', function()
+{
+	getWeather();
+	changeImg();
+	getTime();
+	setInterval(getWeather, 600000); // 10 minutes
+	setInterval(getTime, 6000); // 0.1 minutes
+	changeImgTimeout();
+});
+
+
+
+
+// ============================= List Generation from Drad and Drop =============================
+
+//https://www.smashingmagazine.com/2018/01/drag-drop-file-uploader-vanilla-js/
+
+function shuffle(array) // https://stackoverflow.com/questions/2450954/how-to-randomize-shuffle-a-javascript-array
+{
+	let currentIndex = array.length, randomIndex;
+
+	// While there remain elements to shuffle.
+	while (currentIndex != 0) {
+		// Pick a remaining element.
+		randomIndex = Math.floor(Math.random() * currentIndex);
+		currentIndex--;
+
+		// And swap it with the current element.
+		[array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+	}
+
+	return array;
+}
+
+var validFileExtensions = [".jpg", ".jpeg", ".bmp", ".gif", ".png"];
+
+function makeList(evt)
+{
+	let dt = evt.dataTransfer;
+	let files = dt.files;
+	let fileList = [];
+
+	for (let i = 0; i < files.length; i++)
+	{
+		let name = files[i].name;
+		if ( validFileExtensions.includes( name.substr(name.lastIndexOf('.')) ) )
+			fileList[i] = files[i].name;
+	}
+
+	if (fileList.length > 0)
+	{
+		shuffle(fileList);
+
+		let jsonOut = "data:application/json;charset=utf-8," + encodeURI('var imgList=\n'+JSON.stringify(fileList).replace(/,/g, ',\n')+';\n');
+		let link = document.createElement('a');
+		link.setAttribute('href', jsonOut);
+		link.setAttribute("download", 'list.js');
+		document.getElementById('jsonOut').appendChild(link); // Required for FF
+
+		link.click();
+	}
+}
+
+let dropArea = document.body;
+/*dropArea.addEventListener('dragenter', makeList, false);
+dropArea.addEventListener('dragleave', makeList, false);
+dropArea.addEventListener('dragover', makeList, false);//*/
+
+['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+  dropArea.addEventListener(eventName, preventDefaults, false)
+})
+
+function preventDefaults (evt)
+{
+  evt.preventDefault()
+  evt.stopPropagation()
+}
+
+dropArea.addEventListener('drop', makeList, false);
+
+</script>
+</html>
