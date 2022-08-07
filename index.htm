@@ -8,13 +8,13 @@
 	{
 		width: 100%;
 		height: 100%;
-		/*cursor: none;*/
+		cursor: none;
 	}
 	body
 	{
 		color: white;
 		font-size: 3.7vh;
-		/*cursor: none;*/
+		cursor: none;
 		background: #202020;
 		background: linear-gradient(-225deg, #666666 0%, #202020 100%);
 		background-repeat: no-repeat;
@@ -26,7 +26,7 @@
 		margin: 0;
 		padding: 0;
 	}
-	#foreground, #background, .bottom
+	.bottom, #foreground, #background, .left, .right
 	{
 		display: block;
 		position: absolute;
@@ -35,20 +35,28 @@
 		width:100%;
 		height:100%;
 	}
-	#foreground
+	.left
 	{
-		background-size: contain;
+		z-index: 5;
+		width: 50%;
 	}
-	#background
+	.right
 	{
-		z-index: -10;
-		filter: blur(15px);
-		opacity: 0.8;
-		-webkit-filter: blur(15px);
-		background-size: cover;
+		z-index: 7;
+		right: 0;
+		width: 50%;
+	}
+	.left:hover
+	{
+		background: linear-gradient(280deg, rgba(255,255,255,0) 85%, rgba(255,255,255,0.2) 100%);
+	}
+	.right:hover
+	{
+		background: linear-gradient(80deg, rgba(255,255,255,0) 85%, rgba(255,255,255,0.2) 100%);
 	}
 	.bottom
 	{
+		z-index: 0;
 		background: linear-gradient(180deg, rgba(0,0,0,0) 75%, rgba(0,0,0,0.6) 100%);
 	}
 	#widget
@@ -77,6 +85,19 @@
 		text-transform: capitalize;
 		white-space: nowrap;
 	}
+	#foreground
+	{
+		z-index: -9;
+		background-size: contain;
+	}
+	#background
+	{
+		z-index: -10;
+		filter: blur(15px);
+		opacity: 0.8;
+		-webkit-filter: blur(15px);
+		background-size: cover;
+	}
 	#jsonOut
 	{
 		display: none;
@@ -85,14 +106,15 @@
 <script src="list.js"></script>
 </head>
 <body>
-	<div id="foreground">
-		<div class="bottom">
-			<div id="widget">
-				<span>72&deg;</span><img src="weather/01d.png"/><span id="clock">0:00</span><br>
-				<span id="title">This is the title text that goes here</span>
-			</div>
+	<div class="left" onclick="changeImgTimeout(-1)"></div>
+	<div class="right" onclick="changeImgTimeout()"></div>
+	<div class="bottom">
+		<div id="widget">
+			<span>72&deg;</span><img src="weather/01d.png"/><span id="clock">0:00</span><br>
+			<span id="title">This is the title text that goes here</span>
 		</div>
 	</div>
+	<div id="foreground"></div>
 	<div id="background"></div>
 	<div id="jsonOut"></div>
 </body>
@@ -127,11 +149,6 @@ function changeImgTimeout(dir = 1)
 	clearInterval(imgTimer);
 	imgTimer = setInterval(changeImg, 180000); // 1000 milisec = 1 sec
 }
-
-window.addEventListener("click", function(event)
-{
-	changeImgTimeout();
-});
 
 async function getWeather()
 {
@@ -172,7 +189,7 @@ document.addEventListener('DOMContentLoaded', function()
 
 
 
-// ============================= List Generation from Drad and Drop =============================
+// ========================================================== List Generation from Drad and Drop ==========================================================
 
 //https://www.smashingmagazine.com/2018/01/drag-drop-file-uploader-vanilla-js/
 
