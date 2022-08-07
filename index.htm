@@ -141,7 +141,7 @@ async function getWeather()
 function getTime()
 {
 	let now = new Date();
-	let hr = (now.getHours()+'').replace(/0*(\d{1,2})/, '$1');
+	let hr = now.getHours();
 	if (hr > 12)
 		hr = hr - 12;
 	let min = now.getMinutes();
@@ -210,6 +210,8 @@ function makeList(evt)
 		document.getElementById('jsonOut').appendChild(link); // Required for FF
 
 		link.click();
+		imgList = fileList;
+		changeImg();
 	}
 }
 
