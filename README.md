@@ -9,5 +9,4 @@
 - Optionally insert your OpenWeather API credentials and location from openweathermap.org in the first line of the getWeather() function. Don't have an account? It's easy to set up a free account: https://home.openweathermap.org/users/sign_up Otherwise, remove calls to the function and the weather related tags in the HTML body.
 - Enjoy! Cast it to your Chromecast and see if someone notices. :)
 <br />
-<br />
 (Weather images are modified from openweathermap.org.)

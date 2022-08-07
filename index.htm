@@ -101,26 +101,35 @@ var imgNum = -1;
 var img = imgList[0];
 var imgTimer;
 
-function changeImg()
+function changeImg(dir = 1)
 {
-	if (++imgNum === imgList.length) //If it's equal to the length, then that's too much. Let's stick with the first one again.
+	imgNum += dir;
+	if (imgNum >= imgList.length) //If it's equal or greater to the length, then that's too much. Let's stick with the first one again.
 		imgNum = 0;
+	else if (imgNum < 0)
+		imgNum = imgList.length-1;
 	img = imgList[imgNum];
 
 	document.getElementById('foreground').style.backgroundImage = 'url("i/'+img+'")';
 	document.getElementById('background').style.backgroundImage = 'url("i/'+img+'")';
-	document.getElementById('title').innerHTML = img.replace(/\.[\w]{3,4}$/, '').replace(/_/g, ' ').replace(/\[[^\]]+]/, '');
+	document.getElementById('title').innerHTML = img
+	.replace(/\.[\w]{3,4}$/, '')		//Remove extension
+	.replace(/_/g, ' ')					//Replace underscores with spaces
+	.replace(/\[QM\]/, '')				//Remove [QM]
+	.replace(/ \[[^\]]+]/, '')			//Remove comments I may have placed in [here]
+	.replace(/[ |-]fullview/, '')		//Remove 'fullview' from deviantart
+	.replace(/[ |-][0-9a-z]{7}$/, '');	//Remove deviantart fave.me code
 }
 
-function changeImgTimeout()
+function changeImgTimeout(dir = 1)
 {
+	changeImg(dir);
 	clearInterval(imgTimer);
 	imgTimer = setInterval(changeImg, 180000); // 1000 milisec = 1 sec
 }
 
 window.addEventListener("click", function(event)
 {
-	changeImg();
 	changeImgTimeout();
 });
 
@@ -141,19 +150,19 @@ async function getWeather()
 function getTime()
 {
 	let now = new Date();
+
 	let hr = now.getHours();
-	if (hr > 12)
-		hr = hr - 12;
+	hr = hr > 12 ? hr-12 : (hr === 0 ? 12 : hr);
+
 	let min = now.getMinutes();
-	if (min < 10)
-		min = '0'+min;
+	min = min > 9 ? min : '0'+min;
+
 	document.getElementById('clock').innerHTML = hr+':'+min;
 }
 
 document.addEventListener('DOMContentLoaded', function()
 {
 	getWeather();
-	changeImg();
 	getTime();
 	setInterval(getWeather, 600000); // 10 minutes
 	setInterval(getTime, 6000); // 0.1 minutes
@@ -184,7 +193,7 @@ function shuffle(array) // https://stackoverflow.com/questions/2450954/how-to-ra
 	return array;
 }
 
-var validFileExtensions = [".jpg", ".jpeg", ".bmp", ".gif", ".png"];
+var validFileExtensions = ['.jpg', '.jpeg', '.bmp', '.gif', '.png', '.webp'];
 
 function makeList(evt)
 {
@@ -195,7 +204,7 @@ function makeList(evt)
 	for (let i = 0; i < files.length; i++)
 	{
 		let name = files[i].name;
-		if ( validFileExtensions.includes( name.substr(name.lastIndexOf('.')) ) )
+		if ( validFileExtensions.includes( name.substr(name.lastIndexOf('.')).toLowerCase() ) )
 			fileList[i] = files[i].name;
 	}
 
@@ -203,7 +212,7 @@ function makeList(evt)
 	{
 		shuffle(fileList);
 
-		let jsonOut = "data:application/json;charset=utf-8," + encodeURI('var imgList=\n'+JSON.stringify(fileList).replace(/,/g, ',\n')+';\n');
+		let jsonOut = "data:application/json;charset=utf-8," + encodeURI('var imgList=\n'+JSON.stringify(fileList).replace(/",/g, '",\n')+';\n');
 		let link = document.createElement('a');
 		link.setAttribute('href', jsonOut);
 		link.setAttribute("download", 'list.js');
