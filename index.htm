@@ -48,11 +48,11 @@
 	}
 	.left:hover
 	{
-		background: linear-gradient(280deg, rgba(255,255,255,0) 85%, rgba(255,255,255,0.2) 100%);
+		background: linear-gradient(280deg, rgba(127,127,127,0) 85%, rgba(127,127,127,0.2) 100%);
 	}
 	.right:hover
 	{
-		background: linear-gradient(80deg, rgba(255,255,255,0) 85%, rgba(255,255,255,0.2) 100%);
+		background: linear-gradient(80deg, rgba(127,127,127,0) 85%, rgba(127,127,127,0.2) 100%);
 	}
 	.bottom
 	{
@@ -136,11 +136,15 @@ function changeImg(dir = 1)
 	document.getElementById('background').style.backgroundImage = 'url("i/'+img+'")';
 	document.getElementById('title').innerHTML = img
 	.replace(/\.[\w]{3,4}$/, '')		//Remove extension
-	.replace(/_/g, ' ')					//Replace underscores with spaces
 	.replace(/\[QM\]/, '')				//Remove [QM]
+	.replace(/artist-/, '')				//Remove artist-
+	.replace(/-*colon-/, '')			//Remove -colon-
+	.replace(/-dash-/, '')				//Remove -dash-
+	.replace(/[\d]+[_]{1,2}safe/, '')	//Remove 2175474__safe_artist-
 	.replace(/ \[[^\]]+]/, '')			//Remove comments I may have placed in [here]
 	.replace(/[ |-]fullview/, '')		//Remove 'fullview' from deviantart
-	.replace(/[ |-][0-9a-z]{7}$/, '');	//Remove deviantart fave.me code
+	.replace(/[_|-][0-9a-z]{7}$/, '')	//Remove deviantart fave.me code
+	.replace(/[_|+]/g, ' ');			//Replace underscores and '+' with spaces
 }
 
 function changeImgTimeout(dir = 1)
