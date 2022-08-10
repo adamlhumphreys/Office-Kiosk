@@ -15,8 +15,7 @@
 		color: white;
 		font-size: 3.7vh;
 		cursor: none;
-		background: #202020;
-		background: linear-gradient(-225deg, #666666 0%, #202020 100%);
+		background: gray;
 		background-repeat: no-repeat;
 		background-position: center;
 		background-size: contain;
@@ -26,7 +25,7 @@
 		margin: 0;
 		padding: 0;
 	}
-	.bottom, #foreground, #background, .left, .right
+	.bottom, #foreground, #background, #preload, .left, .right
 	{
 		display: block;
 		position: absolute;
@@ -93,14 +92,14 @@
 	#background
 	{
 		z-index: -10;
-		filter: blur(15px);
-		opacity: 0.8;
-		-webkit-filter: blur(15px);
+		filter: blur(7px);
+		/*opacity: 0.8;*/
+		-webkit-filter: blur(7px);
 		background-size: cover;
 	}
-	#jsonOut
+	#preload
 	{
-		display: none;
+		opacity: 0;
 	}
 </style>
 <script src="list.js"></script>
@@ -116,35 +115,40 @@
 	</div>
 	<div id="foreground"></div>
 	<div id="background"></div>
-	<div id="jsonOut"></div>
+	<div id="preload"></div>
 </body>
 <script>
 var imgNum = -1;
-var img = imgList[0];
 var imgTimer;
 
 function changeImg(dir = 1)
 {
 	imgNum += dir;
-	if (imgNum >= imgList.length) //If it's equal or greater to the length, then that's too much. Let's stick with the first one again.
-		imgNum = 0;
-	else if (imgNum < 0)
-		imgNum = imgList.length-1;
-	img = imgList[imgNum];
 
-	document.getElementById('foreground').style.backgroundImage = 'url("i/'+img+'")';
-	document.getElementById('background').style.backgroundImage = 'url("i/'+img+'")';
-	document.getElementById('title').innerHTML = img
+	//If it's equal or greater to the length, then that's too much. Let's stick with the first one again. Otherwise, if less than 0, go with the last one.
+	imgNum = imgNum >= imgList.length ? 0 : (imgNum < 0 ? imgList.length-1 : imgNum);
+
+	let imgNumNext = dir >= 0 ? imgNum +1 : imgNum -1;
+	imgNumNext = imgNumNext >= imgList.length ? 0 : (imgNumNext < 0 ? imgList.length-1 : imgNumNext);
+
+	document.getElementById('foreground').style.backgroundImage = 'url("i/'+imgList[imgNum]+'")';
+	document.getElementById('background').style.backgroundImage = 'url("i/'+imgList[imgNum]+'")';
+	document.getElementById('preload').style.backgroundImage = 'url("i/'+imgList[imgNumNext]+'")';
+	document.getElementById('title').innerHTML = imgList[imgNum]
 	.replace(/\.[\w]{3,4}$/, '')		//Remove extension
 	.replace(/\[QM\]/, '')				//Remove [QM]
 	.replace(/artist-/, '')				//Remove artist-
 	.replace(/-*colon-/, '')			//Remove -colon-
 	.replace(/-dash-/, '')				//Remove -dash-
-	.replace(/[\d]+[_]{1,2}safe/, '')	//Remove 2175474__safe_artist-
+	.replace(/[\d]+[_]{1,2}safe/, '')	//Remove 2175474__safe
 	.replace(/ \[[^\]]+]/, '')			//Remove comments I may have placed in [here]
 	.replace(/[ |-]fullview/, '')		//Remove 'fullview' from deviantart
 	.replace(/[_|-][0-9a-z]{7}$/, '')	//Remove deviantart fave.me code
 	.replace(/[_|+]/g, ' ');			//Replace underscores and '+' with spaces
+
+	let url = window.location.href;
+	url = url.replace(/([^\/]\/+.*\.htm).*/, '$1')+'?imgNum='+imgNum;
+	window.history.replaceState({'imgNum':imgNum}, document.title, url);
 }
 
 function changeImgTimeout(dir = 1)
@@ -183,11 +187,34 @@ function getTime()
 
 document.addEventListener('DOMContentLoaded', function()
 {
+	// Get query string variables.
+	_GET = [];
+	window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi,function(a,name,value){_GET[name]=value.replace(/#.*$/, '');});
 	getWeather();
 	getTime();
 	setInterval(getWeather, 600000); // 10 minutes
 	setInterval(getTime, 6000); // 0.1 minutes
-	changeImgTimeout();
+	_GET['imgNum'] = parseInt(_GET['imgNum'] !== undefined ? _GET['imgNum'] : 0);
+	_GET['imgNum'] = (isNaN(_GET['imgNum']) ? 0 : _GET['imgNum']) + 1; // +1 because 1 will be subtracted to get the index.
+	changeImgTimeout(_GET['imgNum']);
+
+	document.onkeydown = function (e)
+	{
+		e = e || window.event;
+		switch(e.keyCode)
+		{
+			case 38: // up
+			case 40: // down
+				break;
+			case 37: // left
+				changeImgTimeout(-1);
+				break;
+			case 39: // right
+				changeImgTimeout(1);
+				break;
+			default:
+		}
+	}
 });
 
 
@@ -237,7 +264,7 @@ function makeList(evt)
 		let link = document.createElement('a');
 		link.setAttribute('href', jsonOut);
 		link.setAttribute("download", 'list.js');
-		document.getElementById('jsonOut').appendChild(link); // Required for FF
+		document.getElementById('preload').appendChild(link); // Required for FF
 
 		link.click();
 		imgList = fileList;
