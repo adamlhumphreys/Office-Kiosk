@@ -21,6 +21,7 @@
 		background-size: contain;
 		width: 100%;
 		height: 100%;
+		overflow: hidden;
 		font-family: Trebuchet MS, Comfortaa, Arial, sans-serif;
 		margin: 0;
 		padding: 0;
@@ -92,6 +93,9 @@
 	#background
 	{
 		z-index: -10;
+		margin: -5%;
+		width: 120%;
+		height: 120%;
 		filter: blur(7px);
 		/*opacity: 0.8;*/
 		-webkit-filter: blur(7px);
@@ -109,8 +113,8 @@
 	<div class="right" onclick="changeImgTimeout()"></div>
 	<div class="bottom">
 		<div id="widget">
-			<span>72&deg;</span><img src="weather/01d.png"/><span id="clock">0:00</span><br>
-			<span id="title">This is the title text that goes here</span>
+			<span></span><img/><span id="clock"></span><br>
+			<span id="title"></span>
 		</div>
 	</div>
 	<div id="foreground"></div>
@@ -161,15 +165,28 @@ function changeImgTimeout(dir = 1)
 async function getWeather()
 {
 	let res = await fetch('http://api.openweathermap.org/data/2.5/weather?lat=[LATITUDE GOES HERE]&lon=[LONGITUDE GOES HERE]&units=imperial&appid=[YOUR APP ID HERE]'/*, {mode: 'cors'}*/);
-	res = await res.json();
+	if (res.status === 200)
+	{
+		res = await res.json();
 
-	let widget = document.getElementById('widget');
-	// widget.getElementsByTagName('span')[0].innerHTML = Math.round(res.main.temp)+'&deg;';
-	// widget.getElementsByTagName('img')[0].src = 'weather/'+res.weather[0].icon+'.png';
-	widget.children[0].innerHTML = Math.round(res.main.temp)+'&deg;';
-	widget.children[1].src = 'weather/'+res.weather[0].icon+'.png';
+		let widget = document.getElementById('widget');
+		// widget.getElementsByTagName('span')[0].innerHTML = Math.round(res.main.temp)+'&deg;';
+		// widget.getElementsByTagName('img')[0].src = 'weather/'+res.weather[0].icon+'.png';
+		widget.children[0].innerHTML = Math.round(res.main.temp)+'&deg;';
+		widget.children[1].src = 'weather/'+res.weather[0].icon+'.png';
 
-	return res;
+		return res;
+	}
+	else
+	{
+		console.log('Error getting weather. Response code: '+ res.status);
+		console.log(res);
+
+		if (getWeatherTimer !== undefined)
+			clearInterval(getWeatherTimer);
+
+		return false;
+	}
 }
 
 function getTime()
@@ -190,10 +207,8 @@ document.addEventListener('DOMContentLoaded', function()
 	// Get query string variables.
 	_GET = [];
 	window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi,function(a,name,value){_GET[name]=value.replace(/#.*$/, '');});
-	getWeather();
-	getTime();
-	setInterval(getWeather, 600000); // 10 minutes
-	setInterval(getTime, 6000); // 0.1 minutes
+	getWeather();	getWeatherTimer = setInterval(getWeather, 600000); // 10 minutes
+	getTime();		setInterval(getTime, 6000); // 0.1 minutes
 	_GET['imgNum'] = parseInt(_GET['imgNum'] !== undefined ? _GET['imgNum'] : 0);
 	_GET['imgNum'] = (isNaN(_GET['imgNum']) ? 0 : _GET['imgNum']) + 1; // +1 because 1 will be subtracted to get the index.
 	changeImgTimeout(_GET['imgNum']);
